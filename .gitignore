@@ -1,0 +1,19 @@
+﻿# Downloaded and generated data
+/data/raw/
+/data/processed/
+/data/eurosat/
+
+# Trained model outputs
+/checkpoints/
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
