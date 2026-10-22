@@ -4,8 +4,10 @@ from torchvision.transforms import ToTensor
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data import RandomSampler
+from pathlib import Path
 
-dataset = EuroSAT(root='./data', download=True, transform=ToTensor())
+project_root = Path(__file__).resolve().parents[2]
+dataset = EuroSAT(root=project_root / "data", download=True, transform=ToTensor())
 
 print("Classes of the dataset are :")
 for classname, label in enumerate(dataset.classes):
