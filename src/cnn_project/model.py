@@ -25,9 +25,8 @@ class EuroSATModel(nn.Module):
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2),
             nn.Flatten(),
-            nn.Linear(128*2*2,10)
+            nn.Linear(128*4*4,10)
         )
     def forward(self,x):
         return self.model(x)

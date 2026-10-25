@@ -29,7 +29,7 @@ def create_data_loaders(batch_size=1024 ,num_workser= 8, generator=torch.Generat
         transforms.RandomRotation(degrees=15),
         transforms.RandomVerticalFlip(0.5),
         transforms.RandomHorizontalFlip(0.5),
-        transforms.ColorJitter(brightness= 0.3, saturation= 0.3, contrast= 0.3),
+        transforms.ColorJitter(brightness= 0.1, saturation= 0.1, contrast= 0.1),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
 
