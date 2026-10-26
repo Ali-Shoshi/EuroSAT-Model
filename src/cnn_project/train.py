@@ -4,11 +4,20 @@ import torch.nn as nn
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 
 
 def train_model(model, train_loader, device, epochs=10, lr=0.01, eta_min=0.0002,
-                gamma=0.80, val_loader=None, history=None):
+                gamma=0.80, val_loader=None, history=None, checkpoint_path=None):
+
+    if checkpoint_path is not None and val_loader is None:
+        raise ValueError("val_loader is required to save the best validation checkpoint")
+    if checkpoint_path is not None:
+        checkpoint_path = Path(checkpoint_path)
+        checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    best_val_accuracy = float("-inf")
+    best_epoch = None
 
     loss_fn = nn.CrossEntropyLoss()
     optimizer=optim.Adam(model.parameters(),lr=lr)
@@ -72,8 +81,15 @@ def train_model(model, train_loader, device, epochs=10, lr=0.01, eta_min=0.0002,
         if val_loader is not None:
             message += f", Val loss: {val_loss:.4f}, Val accuracy: {val_accuracy:.4f}"
         print(message)
+        if checkpoint_path is not None and val_accuracy > best_val_accuracy:
+            best_val_accuracy = val_accuracy
+            best_epoch = epoch
+            torch.save(model.state_dict(), checkpoint_path)
         scheduler.step()
 
+    if checkpoint_path is not None:
+        print(f"Best checkpoint: epoch {best_epoch}, validation accuracy "
+              f"{best_val_accuracy:.4%}, saved to {checkpoint_path}")
     return history
 
 if __name__ == "__main__":
