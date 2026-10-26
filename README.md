@@ -3,7 +3,7 @@
 This is a simple CNN model designed to classify satellite images from the EuroSAT dataset. The dataset contains 10 classes with 27,000 images at a 64x64 resolution. The model reaches a accuarcy of around 95% on the test set.
 
 ## Motivation
-The main purpose of making it was to practice new machine learning skills using pytorch.
+The primary goal of this project was to strengthen my PyTorch skills and gain practical experience applying core machine learning concepts.
 
 ## What is EuroSAT
 
@@ -11,8 +11,8 @@ EuroSAT is a widely used benchmark dataset designed for land use and land cover 
 
 ![alt text](image.png)
 
-## About the model
-The model is a CNN model with 4 convolutional layers with kernel size of 3x3 and a fully connected layer with 2048x10.
+## About the Model
+The CNN architecture is summarized below.
 
 | Stage | Layers | Output shape |
 | --- | --- | --- |
@@ -23,15 +23,29 @@ The model is a CNN model with 4 convolutional layers with kernel size of 3x3 and
 | 4 | Conv 3×3 (128 channels), BatchNorm, ReLU | 128 × 4 × 4 |
 | Output | Flatten, Linear | 10 class scores |
 
-## Choosing hyperparameters
+## Choosing Hyperparameters
 
-Initially, I experimented with manually adjusting hyperparameters to observe how different values affected the model's performance. However, this approach proved inefficient for finding the optimal configuration. Therefore, I decided to use Optuna to automate the hyperparameter optimization process.
+Initially, I experimented with manually adjusting hyperparameters to observe how different values affected the model's performance. However, this approach proved inefficient for finding the optimal configuration. Therefore, I decided to use Optuna to automate the process. After running Optuna across 20 trials to test different combinations of the learning rate, batch size, and StepLR gamma, here are the results:
+![alt text](image-3.png)
+![alt text](image-2.png)
 
-1. Epochs = 45
-2. Learning rate = 0.01 - 0.000281472 (using StepLR)
-3. Batch size = 128 images
+
 
 ## Training Process
 
-Training time takes about 6-7 minuts on a RTX 3050 Ti laptop GPU with 4 GB VRAM and a i5-12500H CPU.
-![alt text](image-1.png)
+Training takes about 6–7 minutes on an RTX 3050 Ti laptop GPU with 4 GB VRAM and an i5-12500H CPU.
+
+Below, I have compared the performance of the manually tuned hyperparameters against those found by Optuna. The Optuna settings (Training History 2) outperformed the manual settings (Training History 1) through most of the training process. By the end of training, the final accuracy is the same.
+
+| Hyperparameter | Manually chosen (history 1) | Optuna trial 11 (history 2) |
+| --- | ---: | ---: |
+| Initial learning rate | 0.01 | 0.00633 |
+| Batch size | 128 | 64 |
+| StepLR gamma | 0.8 | 0.696 |
+| Epochs | 45 | 45 |
+| Best Validation Accuarcy | 96% | 96.11% |
+
+
+![alt text](image-4.png)
+
+
