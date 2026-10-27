@@ -1,7 +1,7 @@
 import torch
 from torchvision import transforms
 from torchvision.datasets import EuroSAT
-from torchvision.transforms import ToTensor
+from torchvision.transforms.functional import pil_to_tensor
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader, random_split
 from torch.utils.data import RandomSampler
@@ -9,7 +9,50 @@ from torch.utils.data import Dataset
 from pathlib import Path
 
 project_root = Path(__file__).resolve().parents[2]
-dataset = EuroSAT(root=project_root / "data", download=True, transform=ToTensor())
+
+
+class CachedEuroSAT(Dataset):
+    """Store decoded RGB images as uint8 tensors; augment them on access."""
+
+    def __init__(self, root):
+        root = Path(root)
+        cache_path = root / "processed" / "eurosat_rgb_uint8.pt"
+
+        if cache_path.exists():
+            cache = torch.load(cache_path, map_location="cpu", weights_only=True)
+        else:
+            source = EuroSAT(root=root, download=True, transform=None)
+            first_image, first_label = source[0]
+            first_tensor = pil_to_tensor(first_image)
+            images = torch.empty((len(source), *first_tensor.shape), dtype=torch.uint8)
+            labels = torch.empty(len(source), dtype=torch.long)
+            images[0] = first_tensor
+            labels[0] = first_label
+
+            for index in range(1, len(source)):
+                image, label = source[index]
+                images[index] = pil_to_tensor(image)
+                labels[index] = label
+
+            cache = {"images": images, "labels": labels, "classes": list(source.classes)}
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            temporary_path = cache_path.with_suffix(".tmp")
+            torch.save(cache, temporary_path)
+            temporary_path.replace(cache_path)
+            print(f"Created decoded image cache: {cache_path}")
+
+        self.images = cache["images"]
+        self.labels = cache["labels"]
+        self.classes = cache["classes"]
+
+    def __len__(self):
+        return len(self.labels)
+
+    def __getitem__(self, index):
+        image = self.images[index].float() / 255.0
+        return image, int(self.labels[index])
+
+
 
 class TransformDataset(Dataset):
     def __init__(self, dataset, transform):
@@ -23,7 +66,8 @@ class TransformDataset(Dataset):
         image, label = self.dataset[index]
         return self.transform(image), label
     
-def create_data_loaders(batch_size=1024 ,num_workser= 8, generator=torch.Generator().manual_seed(42)):
+def create_data_loaders(batch_size=1024 ,num_workers= 12 , generator=torch.Generator().manual_seed(42)):
+    dataset = CachedEuroSAT(root=project_root / "data")
 
     train_transform= transforms.Compose([
         transforms.RandomRotation(degrees=15),
@@ -51,9 +95,13 @@ def create_data_loaders(batch_size=1024 ,num_workser= 8, generator=torch.Generat
     val_data = TransformDataset(val_data, val_test_transform)
     test_data = TransformDataset(test_data, val_test_transform)
 
-    train_loader=DataLoader(train_data, batch_size=batch_size, num_workers=num_workser, persistent_workers=True, pin_memory=True, prefetch_factor=2, shuffle= True, generator=generator)
-    val_loader=DataLoader(val_data, batch_size=batch_size, num_workers=num_workser,  persistent_workers=True, pin_memory=True, prefetch_factor=2 , shuffle = False, generator=generator)
-    test_loader= DataLoader(test_data, batch_size=batch_size, num_workers=num_workser, persistent_workers=True, pin_memory=True, prefetch_factor=2, shuffle= False, generator=generator)
+    worker_options = {"num_workers": num_workers, "pin_memory": True}
+    if num_workers > 0:
+        worker_options.update(persistent_workers=True, prefetch_factor=2)
+
+    train_loader=DataLoader(train_data, batch_size=batch_size, shuffle=True, generator=generator, **worker_options)
+    val_loader=DataLoader(val_data, batch_size=batch_size, shuffle=False, generator=generator, **worker_options)
+    test_loader=DataLoader(test_data, batch_size=batch_size, shuffle=False, generator=generator, **worker_options)
 
     return train_loader, val_loader, test_loader
 
@@ -104,7 +152,7 @@ if __name__ == "__main__":
     print(label.shape)
     print("Labels are :",label.min().item()," - ", label.max().item())
 
-    print("Transforms:", dataset.transform)
+    print("Cached image dtype:", dataset.images.dtype)
 
     image, label = dataset[0]
 
