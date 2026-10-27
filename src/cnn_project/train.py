@@ -33,8 +33,8 @@ def train_model(model, train_loader, device, epochs=10, lr=0.01, eta_min=0.0002,
     print("Training model...")
     for i in range(epochs):
         model.train()
-        total_loss=0.0
-        train_correct = 0
+        total_loss = torch.zeros((), device=device)
+        train_correct = torch.zeros((), device=device, dtype=torch.long)
         train_total = 0
         for image, label in train_loader:
             image=image.to(device, non_blocking=True)
@@ -45,16 +45,17 @@ def train_model(model, train_loader, device, epochs=10, lr=0.01, eta_min=0.0002,
             loss.backward()
             optimizer.step()
             batch_size = label.size(0)
-            total_loss += loss.item() * batch_size
-            train_correct += (output.argmax(dim=1) == label).sum().item()
+            total_loss += loss.detach() * batch_size
+            train_correct += (output.argmax(dim=1) == label).sum()
             train_total += batch_size
-
+        total_loss = total_loss.item()
+        train_correct = train_correct.item()
         val_loss = None
         val_accuracy = None
         if val_loader is not None:
             model.eval()
-            val_loss_total = 0.0
-            val_correct = 0
+            val_loss_total = torch.zeros((), device=device)
+            val_correct = torch.zeros((), device=device, dtype=torch.long)
             val_total = 0
             with torch.inference_mode():
                 for image, label in val_loader:
@@ -62,11 +63,11 @@ def train_model(model, train_loader, device, epochs=10, lr=0.01, eta_min=0.0002,
                     label = label.to(device, non_blocking=True)
                     output = model(image)
                     batch_size = label.size(0)
-                    val_loss_total += loss_fn(output, label).item() * batch_size
-                    val_correct += (output.argmax(dim=1) == label).sum().item()
+                    val_loss_total += loss_fn(output, label) * batch_size
+                    val_correct += (output.argmax(dim=1) == label).sum()
                     val_total += batch_size
-            val_loss = val_loss_total / val_total
-            val_accuracy = val_correct / val_total
+            val_loss = val_loss_total.item() / val_total
+            val_accuracy = val_correct.item() / val_total
 
         epoch = len(history["epoch"]) + 1
         learning_rate = optimizer.param_groups[0]["lr"]
