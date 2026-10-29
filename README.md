@@ -6,18 +6,17 @@ This is a simple CNN model designed to classify satellite images from the EuroSA
 The primary goal of this project was to strengthen my PyTorch skills and gain practical experience applying core machine learning concepts.
 
 In this project i have used:
-1. Learning Rate decay - stepLR
-2. Batch Normalization
-3. ReLU
-4. optuna
-5. Quantization
-6. pruning
-7. Pytorch
-8. CNN
-9. adam
-10. Cross entorpy loss function
-11. PyTorch Profiler
-
+1. Pytorch
+2. Optuna
+3. PyTorch Profiler
+4. CNN Architecture
+    1. Adam
+    2. ReLU
+    3. Learning Rate decay - stepLR
+    4. Batch Normalization
+    5. Cross entorpy loss function
+    6. Quantization
+    7. Pruning
 
 ## What is EuroSAT
 
@@ -48,7 +47,7 @@ Initially, I experimented with manually adjusting hyperparameters to observe how
 
 ## Training Process
 
-Training takes about 3–4 minutes on an RTX 3050 Ti laptop GPU with 4 GB VRAM and an i5-12500H CPU.
+Training takes about 3–4 minutes on windows (2-3 on ubuntu) using an RTX 3050 Ti laptop GPU with 4 GB VRAM and an i5-12500H CPU.
 
 Below, I have compared the performance of the manually tuned hyperparameters against those found by Optuna. The Optuna settings (Training History 2) outperformed the manual settings (Training History 1) through most of the training process. By the end of training, the final accuracy is the same.
 
@@ -64,7 +63,3 @@ Below, I have compared the performance of the manually tuned hyperparameters aga
 ![alt text](image-4.png)
 
 
-## What to do next
-find the bottleneck
-lower the presision quantization
-structured prune
