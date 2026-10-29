@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def train_model(model, train_loader, device, epochs=10, lr=0.01, eta_min=0.0002,
-                gamma=0.80, val_loader=None, history=None, checkpoint_path=None):
+                gamma=0.80, val_loader=None, history=None, checkpoint_path=None, step_size=3):
 
     if checkpoint_path is not None and val_loader is None:
         raise ValueError("val_loader is required to save the best validation checkpoint")
@@ -27,7 +27,7 @@ def train_model(model, train_loader, device, epochs=10, lr=0.01, eta_min=0.0002,
                                       "val_loss", "val_accuracy", "learning_rate")}
     #scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=eta_min)
     #scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.6, patience=3, min_lr =eta_min)
-    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=gamma)
+    scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
 
 
     print("Training model...")
