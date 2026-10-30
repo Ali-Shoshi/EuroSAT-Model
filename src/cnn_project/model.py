@@ -1,4 +1,6 @@
-import numpy as np
+import io
+from torch.utils.benchmark import Timer
+
 import torch
 import torch.nn as nn
 
@@ -31,14 +33,56 @@ class EuroSATModel(nn.Module):
     def forward(self,x):
         return self.model(x)
 
-    def size(self):
 
-        param_count = sum(p.numel() for p in self.parameters())
-        param_bytes = sum(p.numel() * p.element_size() for p in self.parameters())
-        buffer_bytes = sum(b.numel() * b.element_size() for b in self.buffers())
+def serialized_state_dict_size_mib(model):
+    """Return the torch.save state dictionary size in MiB (1 MiB = 1024**2 bytes).
 
-        size_mb = (param_bytes + buffer_bytes) / 1_000_000
-        return param_count, size_mb
+    Includes stored tensors, metadata, and serialization overhead. Measures
+    checkpoint storage, not a complete exported program or inference memory.
+    """
+    with io.BytesIO() as buffer:
+        torch.save(model.state_dict(), buffer)
+        return buffer.tell() / 1024**2
+
+
+def model_tensor_size_mib(model):
+    """Return registered parameter and buffer tensor data size in MiB.
+
+    Includes frozen parameters and registered INT8 weight buffers in PT2E graphs.
+    Excludes serialization/Python overhead, inputs, activations, workspace,
+    gradients, and optimizer state; this is not peak inference or training memory.
+    Counts logical tensor elements, not unique underlying storage: distinct
+    tensors sharing storage can be counted twice. Packed weights outside registered
+    parameters and buffers are not included.
+    """
+    parameter_bytes = sum(
+        p.numel() * p.element_size()
+        for p in model.parameters()
+    )
+    buffer_bytes = sum(
+        b.numel() * b.element_size()
+        for b in model.buffers()
+    )
+    return (parameter_bytes + buffer_bytes) / 1024**2
+
+def measure_inference_time_ms(model, example_input, num_threads=1):
+    """Return median forward-pass time in milliseconds per batch.
+
+    Measures CPU execution, excluding data loading and preprocessing.
+    Warm-up runs exclude initial compilation from the measurement.
+    Pass a model already configured for inference and an input on CPU.
+    """
+    with torch.inference_mode():
+        for _ in range(10):
+            model(example_input)
+
+        measurement = Timer(
+            stmt="model(example_input)",
+            globals={"model": model, "example_input": example_input},
+            num_threads=num_threads,
+        ).blocked_autorange(min_run_time=2.0)
+
+    return measurement.median * 1000
 
 # Test the output shape of the model
 

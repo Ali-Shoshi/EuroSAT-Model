@@ -1,5 +1,5 @@
 import torch
-from torchvision import transforms
+from torchvision.transforms import v2 as transforms
 from torchvision.datasets import EuroSAT
 from torchvision.transforms.functional import pil_to_tensor
 import matplotlib.pyplot as plt
@@ -97,7 +97,7 @@ def create_data_loaders(batch_size=1024 ,num_workers= 12 , generator=torch.Gener
 
     worker_options = {"num_workers": num_workers, "pin_memory": True}
     if num_workers > 0:
-        worker_options.update(persistent_workers=True, prefetch_factor=2)
+        worker_options.update(persistent_workers=True, prefetch_factor=3)
 
     train_loader=DataLoader(train_data, batch_size=batch_size, shuffle=True, generator=generator, **worker_options)
     val_loader=DataLoader(val_data, batch_size=batch_size, shuffle=False, generator=generator, **worker_options)
@@ -110,6 +110,7 @@ def create_data_loaders(batch_size=1024 ,num_workers= 12 , generator=torch.Gener
 
 if __name__ == "__main__":
 
+    dataset = CachedEuroSAT(root=project_root / "data")
     print("Classes of the dataset are :")
     for classname, label in enumerate(dataset.classes):
         print(f"{classname}: {label}")
